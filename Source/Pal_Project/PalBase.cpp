@@ -4,6 +4,7 @@
 #include "PalBase.h"
 #include "HealthComponent.h"
 #include "StaminaComponent.h"
+#include "PalHealthBarWidget.h"
 #include "Components/WidgetComponent.h"
 
 // Sets default values
@@ -30,6 +31,38 @@ void APalBase::BeginPlay()
 	if (HealthComponent)
 	{
 		HealthComponent->OnDeath.AddDynamic(this, &APalBase::HandleDeath);
+	}
+
+	// WidgetComponent의 UserWidget 인스턴스를 가져와서 타입 캐스팅
+	if (HealthBarWidget && HealthComponent)
+	{
+		FTimerHandle BindTimer;
+		GetWorldTimerManager().SetTimerForNextTick([this]()
+			{
+				if (!HealthBarWidget || !HealthComponent)
+				{
+					return;
+				}
+
+				UUserWidget* UserWidget = HealthBarWidget->GetUserWidgetObject();
+				if (UPalHealthBarWidget* HealthBar = Cast<UPalHealthBarWidget>(UserWidget))
+				{
+					HealthBar->BindToHealth(HealthComponent);
+				}
+			});
+	}
+
+	// 디버그 타이머 (Day 6에서 넣은 그대로)
+	if (HealthComponent)
+	{
+		FTimerHandle DebugTimer;
+		GetWorldTimerManager().SetTimer(DebugTimer, [this]()
+			{
+				if (HealthComponent)
+				{
+					HealthComponent->ApplyDamage(30.f);
+				}
+			}, 3.f, true);   // ← false를 true로 바꿔서 3초마다 반복 (확인용)
 	}
 }
 
