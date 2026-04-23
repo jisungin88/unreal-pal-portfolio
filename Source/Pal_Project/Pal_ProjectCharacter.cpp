@@ -11,6 +11,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "StaminaComponent.h"
+#include "HealthComponent.h"
 #include "PalHUDWidget.h"
 #include "Blueprint/UserWidget.h"
 
@@ -58,6 +59,8 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 
 	//스테미나
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
+	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
