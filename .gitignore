@@ -1,0 +1,47 @@
+# ========================================
+# Unreal Engine Project .gitignore
+# ========================================
+
+# ─── Visual Studio / Rider 생성물 ───
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.xcodeproj
+*.xcworkspace
+*.VC.db
+*.VC.opendb
+*.sdf
+*.opensdf
+
+# ─── 언리얼 빌드/캐시 (반드시 무시) ───
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+
+# 플러그인 내부의 같은 폴더들도 무시
+Plugins/**/Binaries/
+Plugins/**/Intermediate/
+
+# ─── 압축/백업/OS 파일 ───
+*.zip
+*.rar
+*.7z
+Thumbs.db
+.DS_Store
+
+# ─── 대용량 캐시성 파일 ───
+*.pdb
+*.ipdb
+*.iobj
+
+# ─── 편집기 임시 파일 ───
+*~
+*.swp
+*.swo
+
+# ─── 로그 ───
+*.log
