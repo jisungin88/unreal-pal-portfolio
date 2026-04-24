@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+ï»¿// Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Pal_ProjectCharacter.h"
 #include "Engine/LocalPlayer.h"
@@ -14,6 +14,10 @@
 #include "HealthComponent.h"
 #include "PalHUDWidget.h"
 #include "Blueprint/UserWidget.h"
+#include "PalBase.h"                          
+#include "Kismet/GameplayStatics.h"           // ApplyDamage
+#include "Engine/DamageEvents.h"              // FDamageEvent
+#include "DrawDebugHelpers.h"                 // ë””ë²„ê·¸ ë¼ì¸
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -38,12 +42,12 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 700.f;					// Á¡ÇÁ ÃÊ±â ¼Óµµ (cm/s)
-	GetCharacterMovement()->AirControl = 0.35f;						// °øÁß Á¦¾îµµ (0=¸ø¿òÁ÷ÀÓ, 1=¶¥Ã³·³ ÀÚÀ¯)
-	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;				// ÃÖ´ë °È±â ¼Óµµ (cm/s)
-	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;				// ¾Æ³¯·Î±× ½ºÆ½ »ìÂ¦ ±â¿ï¿´À» ¶§ ÃÖ¼Ò¼Óµµ
-	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;	// ¶¥¿¡¼­ ¸ØÃâ ¶§ °¨¼Ó
-	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;	// °øÁß¿¡¼­ ¸ØÃâ ¶§ °¨¼Ó
+	GetCharacterMovement()->JumpZVelocity = 700.f;					// ì í”„ ì´ˆê¸° ì†ë„ (cm/s)
+	GetCharacterMovement()->AirControl = 0.35f;						// ê³µì¤‘ ì œì–´ë„ (0=ëª»ì›€ì§ì„, 1=ë•…ì²˜ëŸ¼ ììœ )
+	GetCharacterMovement()->MaxWalkSpeed = WalkSpeed;				// ìµœëŒ€ ê±·ê¸° ì†ë„ (cm/s)
+	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;				// ì•„ë‚ ë¡œê·¸ ìŠ¤í‹± ì‚´ì§ ê¸°ìš¸ì˜€ì„ ë•Œ ìµœì†Œì†ë„
+	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;	// ë•…ì—ì„œ ë©ˆì¶œ ë•Œ ê°ì†
+	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;	// ê³µì¤‘ì—ì„œ ë©ˆì¶œ ë•Œ ê°ì†
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -57,7 +61,7 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 
-	//½ºÅ×¹Ì³ª
+	//ìŠ¤í…Œë¯¸ë‚˜
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 
@@ -103,6 +107,9 @@ void APal_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		// Sprinting
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::StartSprint);
 		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Completed, this, &APal_ProjectCharacter::StopSprint);
+
+		// Attacking
+		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::Attack);
 	}
 	else
 	{
@@ -173,7 +180,7 @@ void APal_ProjectCharacter::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);
 
-	// ´ë½Ã ÁßÀÎµ¥ ½ºÅÂ¹Ì³ª ¹Ù´ÚÀÌ¸é °­Á¦ Áß´Ü
+	// ëŒ€ì‹œ ì¤‘ì¸ë° ìŠ¤íƒœë¯¸ë‚˜ ë°”ë‹¥ì´ë©´ ê°•ì œ ì¤‘ë‹¨
 	if (bIsSprinting && StaminaComponent && StaminaComponent->GetCurrentStamina() <= 0.f)
 	{
 		ForceStopSprint();
@@ -197,21 +204,75 @@ void APal_ProjectCharacter::ForceStopSprint()
 
 void APal_ProjectCharacter::CreateHUDWidget()
 {
-	//¼­¹ö Àü¿ë ÀÎ½ºÅÏ½º µî¿¡¼­´Â UI »ı¼º ½ºÅµ
+	//ì„œë²„ ì „ìš© ì¸ìŠ¤í„´ìŠ¤ ë“±ì—ì„œëŠ” UI ìƒì„± ìŠ¤í‚µ
 	APlayerController* PC = Cast<APlayerController>(Controller);
 	if (!PC || !PC->IsLocalController())
 		return;
 
 	if (!HUDWidgetClass)
 	{
-		//UE_LOG(LogTemplateCharacter, Warning, TEXT("HUDWidgetClass°¡ ÁöÁ¤µÇÁö ¾Ê¾Ò½À´Ï´Ù. ºí·çÇÁ¸°Æ®¿¡¼­ ¼³Á¤ÇÏ¼¼¿ä."));
+		//UE_LOG(LogTemplateCharacter, Warning, TEXT("HUDWidgetClassê°€ ì§€ì •ë˜ì§€ ì•Šì•˜ìŠµë‹ˆë‹¤. ë¸”ë£¨í”„ë¦°íŠ¸ì—ì„œ ì„¤ì •í•˜ì„¸ìš”."));
 		return;
 	}
 
-	HUDWidget = CreateWidget<UPalHUDWidget>(PC, HUDWidgetClass); // ¾ğ¸®¾ó UI »ı¼º Ç¥ÁØ ÇÔ¼ö
+	HUDWidget = CreateWidget<UPalHUDWidget>(PC, HUDWidgetClass); // ì–¸ë¦¬ì–¼ UI ìƒì„± í‘œì¤€ í•¨ìˆ˜
 	if (HUDWidget)
 	{
 		HUDWidget->BindToStamina(StaminaComponent);
 		HUDWidget->AddToViewport();
+	}
+}
+
+void APal_ProjectCharacter::Attack(const FInputActionValue& Value)
+{
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	const FVector Start = GetActorLocation();
+	const FVector Forward = GetActorForwardVector();
+	const FVector End = Start + Forward * AttackRange;
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	TArray<FHitResult> HitResults;
+	// Sweep = ì´ë™í•˜ë©° ìŠ¤ìº”, Overlap = íŠ¹ì • ìœ„ì¹˜ì— ê²¹ì¹œ ê²ƒë§Œ
+	// Multi = ì—¬ëŸ¬ ê°œ, Single = ì²« í•˜ë‚˜ë§Œ
+	const bool bHit = World->SweepMultiByChannel(
+		HitResults,                                    // [ì¶œë ¥] ë§ì€ ê²ƒë“¤ ë°°ì—´
+		Start,                                         // ì‹œì‘ì 
+		End,                                           // ëì 
+		FQuat::Identity,                               // ë„í˜• íšŒì „ (SphereëŠ” íšŒì „ ì˜ë¯¸ ì—†ìŒ)
+		ECC_Pawn,                                      // ì¶©ëŒ ì±„ë„ (Pawn ì±„ë„ì€ ìºë¦­í„°ë“¤ì„ ì¡ìŒ. ECC_WorldStaticì€ ë²½/ì§€í˜•)
+		FCollisionShape::MakeSphere(AttackRadius),     // ë„í˜• ì •ì˜
+		QueryParams);                                  // ì˜µì…˜
+	
+	if (bShowAttackDebug)
+	{
+		DrawDebugLine(World, Start, End, FColor::Yellow, false, 1, 0, 2);
+		DrawDebugSphere(World, End, AttackRadius, 12, bHit ? FColor::Red : FColor::Green, false, 1);
+	}
+
+	if (!bHit)
+	{
+		return;
+	}
+
+	for (const FHitResult& Hit : HitResults)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (!HitActor || HitActor == this)
+		{
+			continue;
+		}
+
+		if (APalBase* Pal = Cast<APalBase>(HitActor))
+		{
+			FDamageEvent DamageEvent;
+			Pal->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+		}
 	}
 }

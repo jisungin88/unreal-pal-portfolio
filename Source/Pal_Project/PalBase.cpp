@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "PalBase.h"
@@ -18,9 +18,9 @@ APalBase::APalBase()
 	HealthBarWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("HealthBarWidget"));
 
 	HealthBarWidget->SetupAttachment(GetRootComponent());
-	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen); // Ç×»ó Ä«¸Ş¶ó¸¦ ¹Ù¶óº½ (Billboard)
-	HealthBarWidget->SetRelativeLocation(FVector(0, 0, 120)); // ¸Ó¸® À§
-	HealthBarWidget->SetDrawSize(FVector2D(150, 20)); // »çÀÌÁî
+	HealthBarWidget->SetWidgetSpace(EWidgetSpace::Screen); // í•­ìƒ ì¹´ë©”ë¼ë¥¼ ë°”ë¼ë´„ (Billboard)
+	HealthBarWidget->SetRelativeLocation(FVector(0, 0, 120)); // ë¨¸ë¦¬ ìœ„
+	HealthBarWidget->SetDrawSize(FVector2D(150, 20)); // ì‚¬ì´ì¦ˆ
 }
 
 // Called when the game starts or when spawned
@@ -33,7 +33,7 @@ void APalBase::BeginPlay()
 		HealthComponent->OnDeath.AddDynamic(this, &APalBase::HandleDeath);
 	}
 
-	// WidgetComponentÀÇ UserWidget ÀÎ½ºÅÏ½º¸¦ °¡Á®¿Í¼­ Å¸ÀÔ Ä³½ºÆÃ
+	// WidgetComponentì˜ UserWidget ì¸ìŠ¤í„´ìŠ¤ë¥¼ ê°€ì ¸ì™€ì„œ íƒ€ì… ìºìŠ¤íŒ…
 	if (HealthBarWidget && HealthComponent)
 	{
 		FTimerHandle BindTimer;
@@ -51,19 +51,6 @@ void APalBase::BeginPlay()
 				}
 			});
 	}
-
-	// µğ¹ö±× Å¸ÀÌ¸Ó (Day 6¿¡¼­ ³ÖÀº ±×´ë·Î)
-	if (HealthComponent)
-	{
-		FTimerHandle DebugTimer;
-		GetWorldTimerManager().SetTimer(DebugTimer, [this]()
-			{
-				if (HealthComponent)
-				{
-					HealthComponent->ApplyDamage(30.f);
-				}
-			}, 3.f, true);   // ¡ç false¸¦ true·Î ¹Ù²ã¼­ 3ÃÊ¸¶´Ù ¹İº¹ (È®ÀÎ¿ë)
-	}
 }
 
 void APalBase::HandleDeath()
@@ -75,9 +62,29 @@ void APalBase::HandleDeath()
 		HealthBarWidget->SetVisibility(false);
 	}
 
-	// Ãæµ¹ ºñÈ°¼ºÈ­
+	// ì¶©ëŒ ë¹„í™œì„±í™”
 	SetActorEnableCollision(false);
 
-	// 5ÃÊ ÈÄ ¼Ò¸ê
+	// 5ì´ˆ í›„ ì†Œë©¸
 	SetLifeSpan(5);
+}
+
+float APalBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (ActualDamage <= 0 || !HealthComponent || HealthComponent->IsDead())
+	{
+		return 0;
+	}
+
+	HealthComponent->ApplyDamage(ActualDamage);
+
+
+	UE_LOG(LogTemp, Log, TEXT("%s took %.1f damage from %s"),
+		*GetPalName().ToString(),
+		ActualDamage,
+		DamageCauser ? *DamageCauser->GetName() : TEXT("Unknown"));
+
+	return ActualDamage;
 }
