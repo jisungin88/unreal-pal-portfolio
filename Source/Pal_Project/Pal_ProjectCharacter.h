@@ -16,6 +16,7 @@ class UInputAction;
 class UStaminaComponent;
 class UHealthComponent;
 class UPalHUDWidget;
+class APalBall;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -63,6 +64,9 @@ class APal_ProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* AttackAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* ThrowAction;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UStaminaComponent* StaminaComponent;
 
@@ -89,6 +93,15 @@ class APal_ProjectCharacter : public ACharacter
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Combat|Debug", meta = (AllowPrivateAccess = "true"))
 	bool bShowAttackDebug = true;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Throwing", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<APalBall> PalBallClass;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing", meta = (AllowPrivateAccess = "true"))
+	float ThrowSpeed = 2500;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Throwing", meta = (AllowPrivateAccess = "true"))
+	FVector ThrowOffset = FVector(80, 30, 40);
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "UI", meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UPalHUDWidget> HUDWidgetClass; //클래스 자체(설계도)를 가리킴
@@ -119,6 +132,8 @@ protected:
 	void ForceStopSprint();
 
 	void Attack(const FInputActionValue& Value);
+
+	void Throw(const FInputActionValue& Value);
 
 	void CreateHUDWidget();
 		

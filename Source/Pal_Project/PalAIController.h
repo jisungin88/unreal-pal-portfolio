@@ -87,4 +87,7 @@ protected:
 
 	void OnPatrolMoveFinished(FAIRequestID RequestID, const FPathFollowingResult& Result);
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void BecomeAggressvie();
 };

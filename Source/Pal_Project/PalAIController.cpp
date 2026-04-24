@@ -249,3 +249,11 @@ void APalAIController::OnPatrolMoveFinished(FAIRequestID RequestID, const FPathF
 
 	UE_LOG(LogTemp, Log, TEXT("Patrol move finished: %s"), *UEnum::GetValueAsString(Result.Code));
 }
+
+void APalAIController::BecomeAggressvie()
+{
+	if (CurrentState != EPalAIState::Chase && CurrentState != EPalAIState::Attack)
+	{
+		SetState(EPalAIState::Chase);
+	}
+}

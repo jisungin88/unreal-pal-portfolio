@@ -14,7 +14,8 @@
 #include "HealthComponent.h"
 #include "PalHUDWidget.h"
 #include "Blueprint/UserWidget.h"
-#include "PalBase.h"                          
+#include "PalBase.h"              
+#include "PalBall.h"
 #include "Kismet/GameplayStatics.h"           // ApplyDamage
 #include "Engine/DamageEvents.h"              // FDamageEvent
 #include "DrawDebugHelpers.h"                 // 디버그 라인
@@ -116,6 +117,9 @@ void APal_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		// Attacking
 		EnhancedInputComponent->BindAction(AttackAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::Attack);
+
+		// Ball Throw
+		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::Throw);
 	}
 	else
 	{
@@ -320,5 +324,49 @@ void APal_ProjectCharacter::HandleDeath()
 	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
 	{
 		Movement->DisableMovement();
+	}
+}
+
+void APal_ProjectCharacter::Throw(const FInputActionValue& Value)
+{
+	if (!PalBallClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("PalBallClass not set on character blueprint."));
+		return;
+	}
+
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return;
+	}
+
+	const FVector Forward = GetActorForwardVector();
+	const FVector Right = GetActorRightVector();
+	const FVector Up = GetActorUpVector();
+
+	const FVector SpawnLocation = GetActorLocation()
+		+ Forward * ThrowOffset.X
+		+ Right * ThrowOffset.Y
+		+ Up * ThrowOffset.Z;
+
+	FVector ThrowDirection = Forward;
+	if (const APlayerController* PC = Cast<APlayerController>(Controller))
+	{
+		FVector CamLoc;
+		FRotator CamRot;
+		PC->GetPlayerViewPoint(CamLoc, CamRot);
+		ThrowDirection = CamRot.Vector();
+	}
+
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	Params.Instigator = this;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+	APalBall* Ball = World->SpawnActor<APalBall>(PalBallClass, SpawnLocation, ThrowDirection.Rotation(), Params);
+	if (Ball)
+	{
+		Ball->Launch(ThrowDirection, ThrowSpeed);
 	}
 }
