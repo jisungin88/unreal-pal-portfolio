@@ -19,6 +19,7 @@
 #include "Kismet/GameplayStatics.h"           // ApplyDamage
 #include "Engine/DamageEvents.h"              // FDamageEvent
 #include "DrawDebugHelpers.h"                 // 디버그 라인
+#include "PalInventoryComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -66,6 +67,8 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
 	// 체력
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
+	// 팰인벤토리
+	InventoryComponent = CreateDefaultSubobject<UPalInventoryComponent>(TEXT("InventoryComponent"));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -120,6 +123,8 @@ void APal_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		// Ball Throw
 		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::Throw);
+
+		EnhancedInputComponent->BindAction(SummonAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::SummonFirstPal);
 	}
 	else
 	{

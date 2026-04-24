@@ -13,10 +13,11 @@ class USpringArmComponent;
 class UCameraComponent;
 class UInputMappingContext;
 class UInputAction;
+class APalBall;
 class UStaminaComponent;
 class UHealthComponent;
+class UPalInventoryComponent;
 class UPalHUDWidget;
-class APalBall;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -67,11 +68,17 @@ class APal_ProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* ThrowAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* SummonAction;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UStaminaComponent* StaminaComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UHealthComponent* HealthComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AloowPrivateAccess = "true"))
+	UPalInventoryComponent* InventoryComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
 	float WalkSpeed = 500;
@@ -135,10 +142,16 @@ protected:
 
 	void Throw(const FInputActionValue& Value);
 
+	void SummonFirstPal(const FInputActionValue& Value);
+
 	void CreateHUDWidget();
 		
 	UFUNCTION()
 	void HandleDeath();
+
+public:
+	UFUNCTION(BlueprintPure, Category = "Pal")
+	UPalInventoryComponent* GetInventryComponent() const { return InventoryComponent; }
 
 protected:
 	// APawn interface
