@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -13,18 +13,27 @@ class PAL_PROJECT_API UPalHUDWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
+protected:
+	//T*, TWeakObjectPtr<T>, TObjectPtr<T>
+	// ìŠ¤í…Œë¯¸ë‚˜ ì»´í¬ë„ŒíŠ¸ ì•½í•œ í¬ì¸í„°ë¡œ ë³´ê´€(TWeakObjectPtr)
+	UPROPERTY(Transient) //ì´ ë³€ìˆ˜ëŠ” ì„¸ì´ë¸Œ íŒŒì¼ì— ì €ì¥í•˜ì§€ ì•Šë„ë¡ ì§€ì •
+	TWeakObjectPtr<UStaminaComponent> ObservedStamina;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<class UHealthComponent> ObservedHealth;
+
 public:
-	// ¾î¶² ½ºÅÂ¹Ì³ª ÄÄÆ÷³ÍÆ®¸¦ °üÂûÇÒÁö ¼¼ÆÃ
+	// ì–´ë–¤ ìŠ¤íƒœë¯¸ë‚˜ ì»´í¬ë„ŒíŠ¸ë¥¼ ê´€ì°°í• ì§€ ì„¸íŒ…
 	UFUNCTION(BlueprintCallable, Category = "HUD")
 	void BindToStamina(UStaminaComponent* InStamina);
 
-	// ½ºÅÂ¹Ì³ª ÆÛ¼¾Å×ÀÌÁö
+	UFUNCTION(BlueprintCallable, Category = "HUD")
+	void BindToHealth(class UHealthComponent* InHealth);
+
+	// ìŠ¤íƒœë¯¸ë‚˜ í¼ì„¼í…Œì´ì§€
 	UFUNCTION(BlueprintPure, Category = "HUD")
 	float GetStaminaPercent() const;
 
-protected:
-	//T*, TWeakObjectPtr<T>, TObjectPtr<T>
-	// ½ºÅ×¹Ì³ª ÄÄÆ÷³ÍÆ® ¾àÇÑ Æ÷ÀÎÅÍ·Î º¸°ü(TWeakObjectPtr)
-	UPROPERTY(Transient) //ÀÌ º¯¼ö´Â ¼¼ÀÌºê ÆÄÀÏ¿¡ ÀúÀåÇÏÁö ¾Êµµ·Ï ÁöÁ¤
-	TWeakObjectPtr<UStaminaComponent> ObservedStamina;
+	UFUNCTION(BlueprintPure, Category = "HUD")
+	float GetHealthPercent() const;
 };

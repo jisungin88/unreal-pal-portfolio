@@ -6,6 +6,9 @@
 #include "StaminaComponent.h"
 #include "PalHealthBarWidget.h"
 #include "Components/WidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
+#include "Engine/DamageEvents.h"
+#include "DrawDebugHelpers.h"
 
 // Sets default values
 APalBase::APalBase()
@@ -87,4 +90,60 @@ float APalBase::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, 
 		DamageCauser ? *DamageCauser->GetName() : TEXT("Unknown"));
 
 	return ActualDamage;
+}
+
+bool APalBase::PerformAttack()
+{
+	UWorld* World = GetWorld();
+	if (!World || !HealthComponent || HealthComponent->IsDead())
+	{
+		return false;
+	}
+
+	const FVector Start = GetActorLocation();
+	const FVector End = Start + GetActorForwardVector() * AttackRange;
+
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(this);
+
+	TArray<FHitResult> HitResults;
+	const bool bHit = World->SweepMultiByChannel(
+		HitResults,
+		Start,
+		End,
+		FQuat::Identity,
+		ECC_Pawn,
+		FCollisionShape::MakeSphere(AttackRadius),
+		QueryParams);
+
+	if (bShowAttackDebug)
+	{
+		DrawDebugLine(World, Start, End, FColor::Orange, false, 0.5f, 0, 2);
+		DrawDebugSphere(World, End, AttackRadius, 12, bHit ? FColor::Red : FColor::Green, false, 0.5f);
+	}
+
+	if (!bHit)
+	{
+		return false;
+	}
+
+	bool bDealtDamage = false;
+	for (const FHitResult& Hit : HitResults)
+	{
+		AActor* HitActor = Hit.GetActor();
+		if (!HitActor || HitActor == this)
+		{
+			continue;
+		}
+
+		if (HitActor->IsA(APalBase::StaticClass()))
+		{
+			continue;
+		}
+
+		FDamageEvent DamageEvent;
+		HitActor->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
+		bDealtDamage = true;
+	}
+	return bDealtDamage;
 }

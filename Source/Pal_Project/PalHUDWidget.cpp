@@ -1,12 +1,18 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "PalHUDWidget.h"
 #include "StaminaComponent.h"
+#include "HealthComponent.h"
 
 void UPalHUDWidget::BindToStamina(UStaminaComponent* InStamina)
 {
 	ObservedStamina = InStamina;
+}
+
+void UPalHUDWidget::BindToHealth(UHealthComponent* InHealth)
+{
+	ObservedHealth = InHealth;
 }
 
 float UPalHUDWidget::GetStaminaPercent() const
@@ -15,8 +21,24 @@ float UPalHUDWidget::GetStaminaPercent() const
 		return 0.f;
 
 	const float Max = ObservedStamina->GetMaxStamina();
-	if (Max <= KINDA_SMALL_NUMBER) // 1e-4. ¾ð¸®¾ó Á¦°ø »ó¼ö. 0°ú "0¿¡ °¡±î¿î ¾ÆÁÖ ÀÛÀº °ª"À» ±¸ºÐÇÒ ¶§ ¾¸
+	if (Max <= KINDA_SMALL_NUMBER) // 1e-4. ì–¸ë¦¬ì–¼ ì œê³µ ìƒìˆ˜. 0ê³¼ "0ì— ê°€ê¹Œìš´ ì•„ì£¼ ìž‘ì€ ê°’"ì„ êµ¬ë¶„í•  ë•Œ ì”€
 		return 0.f;
 
 	return ObservedStamina->GetCurrentStamina() / Max;
+}
+
+float UPalHUDWidget::GetHealthPercent() const
+{
+	if (!ObservedHealth.IsValid())
+	{
+		return 0;
+	}
+
+	const float Max = ObservedHealth->GetMaxHealth();
+	if (Max <= KINDA_SMALL_NUMBER)
+	{
+		return 0;
+	}
+
+	return ObservedHealth->GetCurrentHealth() / Max;
 }

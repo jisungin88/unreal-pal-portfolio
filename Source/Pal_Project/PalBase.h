@@ -45,6 +45,9 @@ public:
 		class AController* EventInstigator,	// 보상·처치 기여도
 		AActor* DamageCauser) override;			// 데미지를 실제로 발생시킨 물체 (투사체, 무기 등)
 
+	UFUNCTION(BlueprintCallable, Category = "Pal|Combat")
+	bool PerformAttack();
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|Stats")
 	UHealthComponent* HealthComponent;
@@ -60,6 +63,18 @@ protected:
 	// FName		- 고정된 식별자(크고 빠른 비교, 변경 거의 안 됨)
 	// FString	- 수정 가능한 일반 문자열
 	// FText		- UI에 표시되는 현지화 가능 문자열
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat", meta = (ClampMin = "0"))
+	float AttackDamage = 15;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat", meta = (ClampMin = "0"))
+	float AttackRange = 180;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat", meta = (ClampMin = "0"))
+	float AttackRadius = 80;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Combat|Debug")
+	bool bShowAttackDebug = true;
 
 	UFUNCTION() // 델리게이트 바인딩용
 	void HandleDeath();

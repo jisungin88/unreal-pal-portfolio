@@ -99,6 +99,11 @@ class APal_ProjectCharacter : public ACharacter
 public:
 	APal_ProjectCharacter();
 	
+	virtual float TakeDamage(
+		float DamageAmount,
+		struct FDamageEvent const& DamageEvent,
+		class AController* EventInstigator,
+		AActor* DamageCauser) override;
 
 protected:
 	/** Called for movement input */
@@ -117,6 +122,8 @@ protected:
 
 	void CreateHUDWidget();
 		
+	UFUNCTION()
+	void HandleDeath();
 
 protected:
 	// APawn interface

@@ -61,8 +61,9 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
 
-	//스테미나
+	// 스테미나
 	StaminaComponent = CreateDefaultSubobject<UStaminaComponent>(TEXT("StaminaComponent"));
+	// 체력
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
@@ -84,6 +85,11 @@ void APal_ProjectCharacter::BeginPlay()
 	}
 
 	CreateHUDWidget();
+
+	if (HealthComponent)
+	{
+		HealthComponent->OnDeath.AddDynamic(this, &APal_ProjectCharacter::HandleDeath);
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -219,6 +225,7 @@ void APal_ProjectCharacter::CreateHUDWidget()
 	if (HUDWidget)
 	{
 		HUDWidget->BindToStamina(StaminaComponent);
+		HUDWidget->BindToHealth(HealthComponent);
 		HUDWidget->AddToViewport();
 	}
 }
@@ -274,5 +281,44 @@ void APal_ProjectCharacter::Attack(const FInputActionValue& Value)
 			FDamageEvent DamageEvent;
 			Pal->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
 		}
+	}
+}
+
+float APal_ProjectCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEvent, AController* EventInstigator, AActor* DamageCauser)
+{
+	const float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
+
+	if (ActualDamage <= 0 || !HealthComponent || HealthComponent->IsDead())
+	{
+		return 0;
+	}
+
+	HealthComponent->ApplyDamage(ActualDamage);
+	UE_LOG(LogTemp, Log, TEXT("Player took %.1f damage from %s. HP: %.1f"),
+		ActualDamage,
+		DamageCauser ? *DamageCauser->GetName() : TEXT("Unknown"),
+		HealthComponent->GetCurrentHealth());
+
+	return ActualDamage;
+}
+
+void APal_ProjectCharacter::HandleDeath()
+{
+	UE_LOG(LogTemp, Warning, TEXT("Player has died."));
+
+	if (APlayerController* PC = Cast<APlayerController>(Controller))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PC->GetLocalPlayer()))
+		{
+			if (DefaultMappingContext)
+			{
+				Subsystem->RemoveMappingContext(DefaultMappingContext);
+			}
+		}
+	}
+
+	if (UCharacterMovementComponent* Movement = GetCharacterMovement())
+	{
+		Movement->DisableMovement();
 	}
 }

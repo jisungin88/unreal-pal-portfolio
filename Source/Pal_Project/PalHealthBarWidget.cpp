@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ï»¿// Fill out your copyright notice in the Description page of Project Settings.
 
 #include "PalHealthBarWidget.h"
 #include "HealthComponent.h"
@@ -37,22 +37,22 @@ void UPalHealthBarWidget::HandleHealthChanged(float NewHealth, float MaxHealth)
 	if (HealthText)
 	{
 		const FString Text = FString::Printf(TEXT("%.0f / %.0f"), NewHealth, MaxHealth);
-		HealthText->SetText(FText::FromString(Text)); // SetText´Â FText¸¦ ¹ÞÀ¸¹Ç·Î FString ¡æ FText º¯È¯
+		HealthText->SetText(FText::FromString(Text)); // SetTextëŠ” FTextë¥¼ ë°›ìœ¼ë¯€ë¡œ FString â†’ FText ë³€í™˜
 	}
 }
 
 void UPalHealthBarWidget::HandleDeath()
 {
-	// ¼û±è
+	// ìˆ¨ê¹€
 	SetVisibility(ESlateVisibility::Hidden);
-	// Visible		- º¸ÀÓ		·¹ÀÌ¾Æ¿ô °ø°£ Â÷Áö
-	// Hidden		- ¾È º¸ÀÓ	·¹ÀÌ¾Æ¿ô °ø°£ Â÷Áö(ÀÚ¸®´Â À¯Áö)
-	// Collapsed	- ¾È º¸ÀÓ	·¹ÀÌ¾Æ¿ô °ø°£ Â÷Áö ¾È ÇÔ
+	// Visible		- ë³´ìž„		ë ˆì´ì•„ì›ƒ ê³µê°„ ì°¨ì§€
+	// Hidden		- ì•ˆ ë³´ìž„	ë ˆì´ì•„ì›ƒ ê³µê°„ ì°¨ì§€(ìžë¦¬ëŠ” ìœ ì§€)
+	// Collapsed	- ì•ˆ ë³´ìž„	ë ˆì´ì•„ì›ƒ ê³µê°„ ì°¨ì§€ ì•ˆ í•¨
 }
 
 void UPalHealthBarWidget::NativeDestruct()
 {
-	// ÆÄ±« Àü ±¸µ¶ ÇØÁ¦
+	// íŒŒê´´ ì „ êµ¬ë… í•´ì œ
 	if (ObservedHealth.IsValid())
 	{
 		ObservedHealth->OnHealthChanged.RemoveDynamic(this, &UPalHealthBarWidget::HandleHealthChanged);
