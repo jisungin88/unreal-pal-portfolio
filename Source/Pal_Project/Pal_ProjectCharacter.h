@@ -17,6 +17,7 @@ class APalBall;
 class UStaminaComponent;
 class UHealthComponent;
 class UPalInventoryComponent;
+class UBuildingComponent;
 class UPalHUDWidget;
 struct FInputActionValue;
 
@@ -71,14 +72,23 @@ class APal_ProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* SummonAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* BuildModeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* PlaceAction;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UStaminaComponent* StaminaComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UHealthComponent* HealthComponent;
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AloowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UPalInventoryComponent* InventoryComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	UBuildingComponent* BuildingComponent;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
 	float WalkSpeed = 500;
@@ -144,14 +154,18 @@ protected:
 
 	void SummonFirstPal(const FInputActionValue& Value);
 
+	void OnBuildModeToggle(const FInputActionValue& Value);
+
+	void OnPlaceBuildable(const FInputActionValue& Value);
+
 	void CreateHUDWidget();
-		
+	
 	UFUNCTION()
 	void HandleDeath();
 
 public:
 	UFUNCTION(BlueprintPure, Category = "Pal")
-	UPalInventoryComponent* GetInventryComponent() const { return InventoryComponent; }
+	UPalInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
 
 protected:
 	// APawn interface

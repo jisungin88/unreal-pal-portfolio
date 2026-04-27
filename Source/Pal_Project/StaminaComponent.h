@@ -8,7 +8,7 @@
 
 //ClassGroup=(Custom) - 에디터 "Add Component" 드롭다운에서 "Pal"이라는 카테고리로 묶임
 //BlueprintSpawnableComponent: 블루프린트 에디터에서 "Add Component" 버튼으로 추가 가능하게 해주는 핵심 메타
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(Pal), meta=(BlueprintSpawnableComponent) )
 class PAL_PROJECT_API UStaminaComponent : public UActorComponent
 {
 	GENERATED_BODY()

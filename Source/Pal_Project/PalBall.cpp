@@ -9,6 +9,9 @@
 #include "HealthComponent.h"
 #include "Engine/DamageEvents.h"
 #include "PalAIController.h"
+#include "PalInventoryComponent.h"
+#include "Pal_ProjectCharacter.h"
+#include "PalAIController.h"
 
 // Sets default values
 APalBall::APalBall()
@@ -75,13 +78,38 @@ void APalBall::OnSphereHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 
 	if (APalBase* Pal = Cast<APalBase>(OtherActor))
 	{
+		if (IsFriendlyPal(Pal))
+		{
+			return;
+		}
+
 		bHasAttempted = true;
 
 		const bool bSuccess = AttemptCapture(Pal);
 		if (bSuccess)
 		{
-			Pal->Destroy();
-			Destroy();
+			AActor* Thrower = GetInstigator();
+			bool bStored = false;
+
+			if (APal_ProjectCharacter* Player = Cast<APal_ProjectCharacter>(Thrower))
+			{
+				if (UPalInventoryComponent* Inventory = Player->GetInventoryComponent())
+				{
+					bStored = Inventory->AddPal(Pal);
+				}
+			}
+			
+			if (bStored)
+			{
+				Pal->Destroy();
+				Destroy();
+			}
+			else
+			{
+				// 인벤토리 가득참 등으로 저장 실패 → 포획 실패처럼 처리
+				UE_LOG(LogTemp, Warning, TEXT("Capture succeeded but inventory is full. Pal remains."));
+				SetLifeSpan(LifetimeAfterHit);
+			}
 		}
 		else
 		{
@@ -90,7 +118,7 @@ void APalBall::OnSphereHit(UPrimitiveComponent* HitComp, AActor* OtherActor,
 
 			if (APalAIController* AI = Cast<APalAIController>(Pal->GetController()))
 			{
-				AI->BecomeAggressvie();
+				AI->BecomeAggressive();
 			}
 
 			SetLifeSpan(LifetimeAfterHit);
@@ -137,4 +165,60 @@ float APalBall::CalculateCaptureChance(const APalBase* TargetPal) const
 
 	const float Chance = 1.f - FMath::Pow(HealthRatio, CaptureExponent);
 	return FMath::Clamp(Chance, 0, 1);
+}
+
+bool APalBall::IsFriendlyPal(const APalBase* Pal) const
+{
+	/*if (!Pal || !GetInstigator())
+	{
+		return false;
+	}
+
+	if (auto* ThrowerTeam = Cast<IGenericTeamAgentInterface>(GetInstigator()))
+	{
+		return ThrowerTeam->GetTeamAttitudeTowards(*Pal) == ETeamAttitude::Friendlyl;
+	}
+	return false;*/
+
+	if (!Pal)
+	{
+		return false;
+	}
+
+	if (Pal->GetOwner() == GetInstigator())
+	{
+		return true;
+	}
+
+	if (const APalAIController* AI = Cast<APalAIController>(Pal->GetController()))
+	{
+		if (AI->IsCompanion())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+bool APalBase::IsHostileTo(const APalBase* OtherPal) const
+{
+	if (!OtherPal || OtherPal == this)
+	{
+		return false;
+	}
+
+	bool bSelfIsCompanion = false;
+	if (const APalAIController* SelfAI = Cast<APalAIController>(GetController()))
+	{
+		bSelfIsCompanion = SelfAI->IsCompanion();
+	}
+
+	bool bOtherIsCompanion = false;
+	if (const APalAIController* OtherAI = Cast<APalAIController>(OtherPal->GetController()))
+	{
+		bOtherIsCompanion = OtherAI->IsCompanion();
+	}
+
+	return bSelfIsCompanion != bOtherIsCompanion;
 }

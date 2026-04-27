@@ -79,4 +79,6 @@ protected:
 	UFUNCTION() // 델리게이트 바인딩용
 	void HandleDeath();
 
+protected:
+	bool IsHostileTo(const APalBase* OtherPal) const;
 };

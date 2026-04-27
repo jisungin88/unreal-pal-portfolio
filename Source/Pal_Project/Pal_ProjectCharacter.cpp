@@ -20,6 +20,8 @@
 #include "Engine/DamageEvents.h"              // FDamageEvent
 #include "DrawDebugHelpers.h"                 // 디버그 라인
 #include "PalInventoryComponent.h"
+#include "PalAIController.h"
+#include "BuildingComponent.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -69,6 +71,8 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 	HealthComponent = CreateDefaultSubobject<UHealthComponent>(TEXT("HealthComponent"));
 	// 팰인벤토리
 	InventoryComponent = CreateDefaultSubobject<UPalInventoryComponent>(TEXT("InventoryComponent"));
+
+	BuildingComponent = CreateDefaultSubobject<UBuildingComponent>(TEXT("BuildingComponent"));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -125,6 +129,9 @@ void APal_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 		EnhancedInputComponent->BindAction(ThrowAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::Throw);
 
 		EnhancedInputComponent->BindAction(SummonAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::SummonFirstPal);
+
+		EnhancedInputComponent->BindAction(BuildModeAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnBuildModeToggle);
+		EnhancedInputComponent->BindAction(PlaceAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnPlaceBuildable);
 	}
 	else
 	{
@@ -241,6 +248,12 @@ void APal_ProjectCharacter::CreateHUDWidget()
 
 void APal_ProjectCharacter::Attack(const FInputActionValue& Value)
 {
+	if (BuildingComponent && BuildingComponent->IsInBuildMode())
+	{
+		BuildingComponent->TryPlaceBuildable();
+		return;
+	}
+
 	UWorld* World = GetWorld();
 	if (!World)
 	{
@@ -287,6 +300,14 @@ void APal_ProjectCharacter::Attack(const FInputActionValue& Value)
 
 		if (APalBase* Pal = Cast<APalBase>(HitActor))
 		{
+			if (const APalAIController* AI = Cast<APalAIController>(Pal->GetController()))
+			{
+				if (AI->IsCompanion())
+				{
+					continue;
+				}
+			}
+
 			FDamageEvent DamageEvent;
 			Pal->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
 		}
@@ -373,5 +394,49 @@ void APal_ProjectCharacter::Throw(const FInputActionValue& Value)
 	if (Ball)
 	{
 		Ball->Launch(ThrowDirection, ThrowSpeed);
+	}
+}
+
+void APal_ProjectCharacter::SummonFirstPal(const FInputActionValue& Value)
+{
+	if (!InventoryComponent)
+	{
+		return;
+	}
+
+	if (InventoryComponent->GetUsedSlots() == 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Inventory is empty - nothing to summon."));
+		return;
+	}
+
+	const FVector SpawnLocation = GetActorLocation()
+		+ GetActorForwardVector() * 200
+		+ GetActorRightVector() * 100;
+
+	for (int32 i = 0; i < InventoryComponent->GetMaxSlots(); ++i)
+	{
+		FPalInventoryEntry Entry;
+		if (InventoryComponent->GetEntry(i, Entry))
+		{
+			InventoryComponent->SummonPal(i, SpawnLocation);
+			return;
+		}
+	}
+}
+
+void APal_ProjectCharacter::OnBuildModeToggle(const FInputActionValue& Value)
+{
+	if (BuildingComponent)
+	{
+		BuildingComponent->ToggleBuildMode();
+	}
+}
+
+void APal_ProjectCharacter::OnPlaceBuildable(const FInputActionValue& Value)
+{
+	if (BuildingComponent && BuildingComponent->IsInBuildMode())
+	{
+		BuildingComponent->TryPlaceBuildable();
 	}
 }

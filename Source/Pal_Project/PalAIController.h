@@ -19,6 +19,7 @@ enum class EPalAIState : uint8
 	Alert,
 	Chase,
 	Attack,
+	Follow,
 };
 
 UCLASS()
@@ -45,18 +46,29 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Patrol")
 	float IdleDuration = 2;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Combat", meta = (Clamp = "0"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Combat", meta = (ClampMin = "0"))
 	float AttackDistance = 180;
 
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Combat", meta = (Clamp = "0.1"))
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Combat", meta = (ClampMin = "0.1"))
 	float AttackCooldown = 1.5f;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Debug")
 	bool bShowDebug = true;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = "AI")
+	bool bIsCompanion = false;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "AI|State")
 	EPalAIState CurrentState = EPalAIState::Idle;
+
+	UPROPERTY(Transient)
+	TWeakObjectPtr<AActor> CurrentTarget;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "AI|Companion", meta = (ClampMin = "0"))
+	float CompanionDetectRadius = 1200;
+
+	UPROPERTY(EditDEfaultsOnly, BlueprintReadOnly, Category = "AI|Companion", meta = (ClampMin = "0"))
+	float CompanionDisengageRedius = 1800;
 
 	FVector HomeLocation = FVector::ZeroVector;
 	float IdleTimeLeft = 0;
@@ -80,6 +92,7 @@ protected:
 	void TickAlert(float DeltaSeconds);
 	void TickChase(float DeltaSeconds);
 	void TickAttack(float DeltaSeconds);
+	void TickFollow(float DeltaSeconds);
 
 	class APawn* GetPlayerPawn() const;
 
@@ -87,7 +100,18 @@ protected:
 
 	void OnPatrolMoveFinished(FAIRequestID RequestID, const FPathFollowingResult& Result);
 
+	APalBase* FindNearestEnemyPal(float SearchRadius) const;
+
+	bool IsTargetValid(float MaxDistance) const;
+
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "AI")
-	void BecomeAggressvie();
+	void BecomeAggressive();
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	void SetCompanionMode(bool bCompanion);
+
+	UFUNCTION(BlueprintCallable, Category = "AI")
+	bool IsCompanion() const { return bIsCompanion; }
 };

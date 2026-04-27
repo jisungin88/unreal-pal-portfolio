@@ -25,13 +25,13 @@ struct FPalInventoryEntry
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FName Nickname;
 
-	bool IsValid() const { return PalClass != nullptr; }
+	bool IsValid() const;
 };
 
 // 델리게이트: 인벤토리 변경 시 브로드캐스트 (HUD 갱신용)
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnInventoryChanged);
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS( ClassGroup=(Pal), meta=(BlueprintSpawnableComponent) )
 class PAL_PROJECT_API UPalInventoryComponent : public UActorComponent
 {
 	GENERATED_BODY()
@@ -58,6 +58,11 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Pal|Inventory", meta = (ClampMin = "1"))
 	int32 MaxSlots = 6;
 		
+public: 
+	// 이벤트
+	UPROPERTY(BlueprintAssignable, Category = "Pal|Inventory")
+	FOnInventoryChanged OnInventoryChanged;
+
 public:
 	UFUNCTION(BlueprintCallable, Category = "Pal|Inventory")
 	bool AddPal(APalBase* PalToStore);
@@ -73,8 +78,4 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Pal|Inventory")
 	int32 GetUsedSlots() const;
-
-	// 이벤트
-	UPROPERTY(BlueprintAssignable, Category = "Pal|Inventory")
-	FOnInventoryChanged OnInventoryChanged;
 };

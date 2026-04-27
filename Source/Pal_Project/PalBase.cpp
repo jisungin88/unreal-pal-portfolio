@@ -136,11 +136,14 @@ bool APalBase::PerformAttack()
 			continue;
 		}
 
-		if (HitActor->IsA(APalBase::StaticClass()))
+		if (APalBase* OtherPal = Cast<APalBase>(HitActor))
 		{
-			continue;
+			if (!IsHostileTo(OtherPal))
+			{
+				continue;
+			}
 		}
-
+		
 		FDamageEvent DamageEvent;
 		HitActor->TakeDamage(AttackDamage, DamageEvent, GetController(), this);
 		bDealtDamage = true;

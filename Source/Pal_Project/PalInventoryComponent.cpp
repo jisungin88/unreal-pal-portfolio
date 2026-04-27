@@ -2,9 +2,15 @@
 
 
 #include "PalInventoryComponent.h"
+#include "PalAIController.h"
 #include "PalBase.h"
 #include "HealthComponent.h"
 #include "Engine/World.h"
+
+bool FPalInventoryEntry::IsValid() const
+{
+	return PalClass != nullptr;
+}
 
 // Sets default values for this component's properties
 UPalInventoryComponent::UPalInventoryComponent()
@@ -100,6 +106,8 @@ APalBase* UPalInventoryComponent::SummonPal(int32 SlotIndex, const FVector& Summ
 		return nullptr;
 	}
 
+	Summoned->SetOwner(GetOwner());
+
 	const float HealthToRestore = Entry.SavedHealth;
 	World->GetTimerManager().SetTimerForNextTick([Summoned, HealthToRestore]()
 		{
@@ -115,6 +123,11 @@ APalBase* UPalInventoryComponent::SummonPal(int32 SlotIndex, const FVector& Summ
 				{
 					Health->ApplyDamage(Damage);
 				}
+			}
+
+			if (APalAIController* AI = Cast<APalAIController>(Summoned->GetController()))
+			{
+				AI->SetCompanionMode(true);
 			}
 		});
 

@@ -57,6 +57,7 @@ protected:
 	// 포획 성공률 계산
 	float CalculateCaptureChance(const APalBase* TargetPal) const;
 
+	bool IsFriendlyPal(const APalBase* Pal) const;
 
 public:
 	// 발사 방향 설정 (Spawn 직후 호출)
