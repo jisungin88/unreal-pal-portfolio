@@ -70,4 +70,16 @@ void UPalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
 
 	const float TargetLean = FMath::Clamp(YawDeltaSpeed * LeanScale, -1, 1);
 	Lean = FMath::FInterpTo(Lean, TargetLean, DeltaSeconds, LeanInterpSpeed);
+
+	//if (GEngine)
+	//{
+	//	const FString DebugText = FString::Printf(
+	//		TEXT("YawDeltaSpeed: %.1f | Lean: %.3f | Speed: %.1f"),
+	//		YawDeltaSpeed, Lean, GroundSpeed);
+	//	GEngine->AddOnScreenDebugMessage(
+	//		-1,                                  // -1 = 매번 새 메시지
+	//		0.f,                                 // 0초 = 한 프레임만 (매 프레임 갱신되니까 OK)
+	//		FColor::Yellow,
+	//		DebugText);
+	//}
 }
