@@ -124,7 +124,26 @@ void UBuildingComponent::UpdatePreview()
 
 	FHitResult Hit;
 	const bool bHit = World->LineTraceSingleByChannel(Hit, TraceStart, TraceEnd, ECC_Visibility, QueryParams);
-	const FVector TargetLocation = bHit ? Hit.ImpactPoint : TraceEnd;
+	FVector TargetLocation;
+	if (bHit)
+	{
+		
+		if (UStaticMeshComponent* PreviewMesh = PreviewActor->GetMesh())
+		{
+			const FVector BoxExtent = PreviewMesh->Bounds.BoxExtent;
+			const float OffsetMagnitude = FMath::Abs(FVector::DotProduct(Hit.ImpactNormal, BoxExtent));
+			TargetLocation = Hit.ImpactPoint + Hit.ImpactNormal * OffsetMagnitude;
+		}
+		else
+		{
+			TargetLocation = Hit.ImpactPoint;
+		}
+	}
+	else
+	{
+		TargetLocation = TraceEnd;
+	}
+
 	const FVector SnappedLocation = SnapToGrid(TargetLocation);
 
 	const FRotator OwnerRot = OwnerPawn->GetActorRotation();

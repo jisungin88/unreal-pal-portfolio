@@ -4,6 +4,7 @@
 #include "PalAIController.h"
 #include "PalBase.h"
 #include "HealthComponent.h"
+#include "Engine/OverlapResult.h"
 #include "Kismet/GameplayStatics.h"
 #include "NavigationSystem.h"
 #include "DrawDebugHelpers.h"
