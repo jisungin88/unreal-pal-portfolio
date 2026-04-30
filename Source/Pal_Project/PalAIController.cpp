@@ -117,7 +117,7 @@ void APalAIController::SetState(EPalAIState NewState)
 	case EPalAIState::Follow:
 		break;
 	}
-	UE_LOG(LogTemp, Log, TEXT("PalAI: state -> %s"), *UEnum::GetValueAsString(NewState));
+	//UE_LOG(LogTemp, Log, TEXT("PalAI: state -> %s"), *UEnum::GetValueAsString(NewState));
 }
 
 void APalAIController::TickIdle(float DeltaSeconds)
@@ -313,7 +313,7 @@ void APalAIController::OnPatrolMoveFinished(FAIRequestID RequestID, const FPathF
 
 	bPatrolArrived = true;
 
-	UE_LOG(LogTemp, Log, TEXT("Patrol move finished: %s"), *UEnum::GetValueAsString(Result.Code));
+	//UE_LOG(LogTemp, Log, TEXT("Patrol move finished: %s"), *UEnum::GetValueAsString(Result.Code));
 }
 
 void APalAIController::BecomeAggressive()

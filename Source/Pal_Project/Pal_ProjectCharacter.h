@@ -18,6 +18,7 @@ class UStaminaComponent;
 class UHealthComponent;
 class UPalInventoryComponent;
 class UBuildingComponent;
+class UWeaponManager;
 class UPalHUDWidget;
 struct FInputActionValue;
 
@@ -78,6 +79,12 @@ class APal_ProjectCharacter : public ACharacter
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
 	UInputAction* PlaceAction;
 
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EqiupSlot1Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	UInputAction* EqiupSlot2Action;
+
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UStaminaComponent* StaminaComponent;
 
@@ -89,6 +96,9 @@ class APal_ProjectCharacter : public ACharacter
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
 	UBuildingComponent* BuildingComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
+	UWeaponManager* WeaponManager;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
 	float WalkSpeed = 500;
@@ -161,6 +171,10 @@ protected:
 
 	void OnPlaceBuildable(const FInputActionValue& Value);
 
+	void OnEqiupSlot1(const FInputActionValue& Value);
+
+	void OnEqiupSlot2(const FInputActionValue& Value);
+
 	void CreateHUDWidget();
 	
 	UFUNCTION()
@@ -172,6 +186,9 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "Movement")
 	bool IsSprinting() const { return bIsSprinting; }
+
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	UWeaponManager* GetWeaponManager() const { return WeaponManager; }
 
 protected:
 	// APawn interface

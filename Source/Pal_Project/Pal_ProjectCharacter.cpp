@@ -22,6 +22,7 @@
 #include "PalInventoryComponent.h"
 #include "PalAIController.h"
 #include "BuildingComponent.h"
+#include "WeaponManager.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -73,6 +74,8 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 	InventoryComponent = CreateDefaultSubobject<UPalInventoryComponent>(TEXT("InventoryComponent"));
 
 	BuildingComponent = CreateDefaultSubobject<UBuildingComponent>(TEXT("BuildingComponent"));
+
+	WeaponManager = CreateDefaultSubobject<UWeaponManager>(TEXT("WeaponManager"));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
@@ -132,6 +135,9 @@ void APal_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		EnhancedInputComponent->BindAction(BuildModeAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnBuildModeToggle);
 		EnhancedInputComponent->BindAction(PlaceAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnPlaceBuildable);
+
+		EnhancedInputComponent->BindAction(EqiupSlot1Action, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnEqiupSlot1);
+		EnhancedInputComponent->BindAction(EqiupSlot2Action, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnEqiupSlot2);
 	}
 	else
 	{
@@ -251,6 +257,12 @@ void APal_ProjectCharacter::Attack(const FInputActionValue& Value)
 	if (BuildingComponent && BuildingComponent->IsInBuildMode())
 	{
 		BuildingComponent->TryPlaceBuildable();
+		return;
+	}
+
+	if (WeaponManager && WeaponManager->GetCurrentWeapon())
+	{
+		WeaponManager->TryAttack();
 		return;
 	}
 
@@ -438,5 +450,21 @@ void APal_ProjectCharacter::OnPlaceBuildable(const FInputActionValue& Value)
 	if (BuildingComponent && BuildingComponent->IsInBuildMode())
 	{
 		BuildingComponent->TryPlaceBuildable();
+	}
+}
+
+void APal_ProjectCharacter::OnEqiupSlot1(const FInputActionValue& Value)
+{
+	if (WeaponManager)
+	{
+		WeaponManager->EqiupSlot(0);
+	}
+}
+
+void APal_ProjectCharacter::OnEqiupSlot2(const FInputActionValue& Value)
+{
+	if (WeaponManager)
+	{
+		WeaponManager->EqiupSlot(1);
 	}
 }
