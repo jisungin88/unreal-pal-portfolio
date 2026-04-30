@@ -109,4 +109,12 @@ private:
 
     /** 이전 프레임 Yaw — Lean 계산용 (UPROPERTY 불필요) */
     float PreviousYaw = 0.f;
+
+public:
+    UFUNCTION(BlueprintCallable, Category = "Pal|Animation")
+    UAnimMontage* PlayAttackMontage(UAnimMontage* FullBodyMontage, UAnimMontage* UpperBodyMontage,
+        bool bForceFullBody = false, float PlayRate = 1);
+
+    UFUNCTION(BlueprintPure, Category = "Pal|Animation")
+    bool IsMoving() const { return GroundSpeed > MovingSpeedThreshold }
 };

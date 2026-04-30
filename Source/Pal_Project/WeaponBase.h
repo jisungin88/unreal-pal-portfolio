@@ -10,6 +10,26 @@ class USkeletalMeshComponent;
 class APal_ProjectCharacter;
 class UAnimMontage;
 
+USTRUCT(BlueprintType)
+struct FAttackMontagePair
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	TObjectPtr<UAnimMontage> FullBodyMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	TObjectPtr<UAnimMontage> UpperBodyMontage;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Attack")
+	bool bForceFullBody = false;
+
+	bool IsValid() const
+	{
+		return FullBodyMontage != nullptr || UpperBodyMontage != nullptr;
+	}
+};
+
 UENUM(BlueprintType)
 enum class EWeaponCategory : uint8
 {
