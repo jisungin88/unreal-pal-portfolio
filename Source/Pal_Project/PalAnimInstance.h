@@ -2,18 +2,10 @@
 
 #include "CoreMinimal.h"
 #include "Animation/AnimInstance.h"
+#include "PalActionTypes.h"
 #include "PalAnimInstance.generated.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogPalAnim, Log, All);
-
-UENUM(BlueprintType)
-enum class EActionState : uint8
-{
-    None,
-    Attack,
-    Dodge,
-    Skill
-};
 
 class APal_ProjectCharacter;
 class UCharacterMovementComponent;
