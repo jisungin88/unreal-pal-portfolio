@@ -1,4 +1,4 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your co`yright notice in the Description page of Project Settings.
 
 #include "PalAnimInstance.h"
 #include "Pal_ProjectCharacter.h"
@@ -97,10 +97,19 @@ void UPalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     const float SpeedRatio = GroundSpeed / UpperBodyFullSeparationSpeed;
     float TargetWeight = FMath::Clamp(SpeedRatio, 0.f, 1.f);
 
-    const float ForceFullBodyValue = GetCurveValue(ForceFullBodyCurveName);
-    if (ForceFullBodyValue > KINDA_SMALL_NUMBER)
+    const bool bUpperPlaying = IsAnyMontagePlayingInUpperBodySlot();
+
+    if (bUpperPlaying)
     {
-        TargetWeight = FMath::Lerp(TargetWeight, 0.f, ForceFullBodyValue);
+        TargetWeight = 1;
+    }
+    else
+    {
+        const float ForceFullBodyValue = GetCurveValue(ForceFullBodyCurveName);
+        if (ForceFullBodyValue > KINDA_SMALL_NUMBER)
+        {
+            TargetWeight = FMath::Lerp(TargetWeight, 0, ForceFullBodyValue);
+        }
     }
 
     UpperBodyBlendWeight = FMath::FInterpTo(UpperBodyBlendWeight, TargetWeight, DeltaSeconds, UpperBodyBlendInterpSpeed);
@@ -108,6 +117,26 @@ void UPalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
     // 디버그 출력
     if (bShowAnimDebug && GEngine)
     {
+        UAnimMontage* Active = GetCurrentActiveMontage();
+        const FString MontageName = Active ? Active->GetName() : TEXT("None");
+        const float CurveVal = GetCurveValue(ForceFullBodyCurveName);
+
+        const FString DiagText = FString::Printf(
+            TEXT("UpperW=%.2f | Speed=%.0f | ForceFB=%.2f | UpperPlay=%s"),
+            UpperBodyBlendWeight,
+            GroundSpeed,
+            CurveVal,
+            IsAnyMontagePlayingInUpperBodySlot() ? TEXT("Y") : TEXT("N"));
+
+        GEngine->AddOnScreenDebugMessage(1004, 0.f, FColor::Orange, DiagText);
+
+        /*const FString BlendText = FString::Printf(
+            TEXT("UpperW=%.2f  Speed=%.1f  Moving=%s  Montage=%s"),
+            UpperBodyBlendWeight,
+            GroundSpeed,
+            IsMoving() ? TEXT("YES") : TEXT("no"),
+            *MontageName);
+
         const FString LocoText = FString::Printf(
             TEXT("Speed=%.1f  Dir=%.1f  Yaw/s=%.1f  Lean=%.2f"),
             GroundSpeed, Direction, YawDeltaSpeed, Lean);
@@ -119,7 +148,66 @@ void UPalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
             bIsFalling ? TEXT("T") : TEXT("F"),
             TimeInAir, VerticalVelocity,
             UpperBodyBlendWeight, ForceFullBodyValue);
+
         GEngine->AddOnScreenDebugMessage(
-            PalAnimDebug::StateKey, 0.f, FColor::Cyan, StateText);
+            PalAnimDebug::StateKey, 0.f, FColor::Cyan, StateText);*/
     }
+}
+
+UAnimMontage* UPalAnimInstance::PlayAttackMontage(
+    UAnimMontage* FullBodyMontage, 
+    UAnimMontage* UpperBodyMontage,
+    bool bForceFullBody,
+    float PlayRate)
+{
+    const bool bUseFullBody = bForceFullBody || !IsMoving();
+    UAnimMontage* TargetMontage = bUseFullBody ? FullBodyMontage : UpperBodyMontage;
+
+    if (!IsValid(TargetMontage) && IsValid(FullBodyMontage))
+    {
+        TargetMontage = FullBodyMontage;
+        UE_LOG(LogPalAnim, Verbose, TEXT("UpperBody montage missing — falling back to FullBody"));
+    }
+
+    if (!IsValid(TargetMontage))
+    {
+        UE_LOG(LogPalAnim, Warning, TEXT("PlayAttackMontage failed - both Full/Upper montages are null"));
+        return nullptr;
+    }
+
+    const float Duration = Montage_Play(TargetMontage, PlayRate);
+    if (Duration <= 0)
+    {
+        UE_LOG(LogPalAnim, Warning, TEXT("Montage_Play returned 0 - '%s' may be invalid"), * TargetMontage->GetName());
+        return nullptr;
+    }
+
+    UE_LOG(LogPalAnim, Verbose, TEXT("Played '%s' (FullBody=%d, Moving=%d, Force=%d)"),
+        *TargetMontage->GetName(),
+        bUseFullBody ? 1 : 0, IsMoving() ? 1 : 0, bForceFullBody ? 1 : 0);
+
+    return TargetMontage;
+}
+
+bool UPalAnimInstance::IsAnyMontagePlayingInUpperBodySlot() const
+{
+    UAnimMontage* Active = GetCurrentActiveMontage();
+    if (!Active)
+    {
+        return false;
+    }
+
+    for (const FSlotAnimationTrack& Track : Active->SlotAnimTracks)
+    {
+        if (Track.SlotName == UpperBodySlotName)
+        {
+            return Montage_IsPlaying(Active);
+        }
+    }
+    return false;
+}
+
+void UPalAnimInstance::SetUpperBodyBlendImmediate(float Weight)
+{
+    UpperBodyBlendWeight = FMath::Clamp(Weight, 0, 1);
 }

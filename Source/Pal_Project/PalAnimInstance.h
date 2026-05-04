@@ -70,6 +70,9 @@ private:
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Anim|Layering", meta = (AllowPrivateAccess = "true"))
     float UpperBodyBlendWeight = 0.f;
 
+    UPROPERTY(EditDefaultsOnly, Category = "Anim|Tuning")
+    FName UpperBodySlotName = TEXT("UpperBody");
+
     //========================================================
     // Tuning (디자이너 노출)
     //========================================================
@@ -116,5 +119,11 @@ public:
         bool bForceFullBody = false, float PlayRate = 1);
 
     UFUNCTION(BlueprintPure, Category = "Pal|Animation")
-    bool IsMoving() const { return GroundSpeed > MovingSpeedThreshold }
+    bool IsMoving() const { return GroundSpeed > MovingSpeedThreshold; }
+
+    UFUNCTION(BlueprintCallable, Category = "Pal|Animation")
+    void SetUpperBodyBlendImmediate(float Weight);
+
+private:
+    bool IsAnyMontagePlayingInUpperBodySlot() const;
 };

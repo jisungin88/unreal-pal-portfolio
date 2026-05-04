@@ -28,7 +28,7 @@ protected:
 	bool bShowDebug = true;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Sword|Combo")
-	TArray<TObjectPtr<UAnimMontage>> ComboMontages;
+	TArray<FAttackMontagePair> ComboMontages;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Sword|Combo")
 	int32 ComboIndex = -1;

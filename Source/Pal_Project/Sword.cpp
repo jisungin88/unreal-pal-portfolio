@@ -5,6 +5,7 @@
 #include "Pal_ProjectCharacter.h"
 #include "Animation/AnimInstance.h"
 #include "Animation/AnimMontage.h"
+#include "PalAnimInstance.h"
 #include "Engine/DamageEvents.h" 
 
 ASword::ASword()
@@ -12,7 +13,7 @@ ASword::ASword()
 	Category = EWeaponCategory::Melee;
 	WeaponName = TEXT("Sword");
 	BaseDamage = 25;
-	AttackCooldown = 0;
+	AttackCooldown = 0.1f;
 }
 
 void ASword::PerformHitDetection(float DeltaTime)
@@ -88,59 +89,68 @@ void ASword::TryAttack()
 		return;
 	}
 
-	UAnimInstance* AnimInst = CharacterMesh->GetAnimInstance();
-	if (!AnimInst)
+	UPalAnimInstance* PalAnim = Cast<UPalAnimInstance>(CharacterMesh->GetAnimInstance());
+	if (!PalAnim)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Sword: AnimInstance is not UPalAnimInstance"));
 		return;
 	}
 
 	if (ComboIndex >= 0)
 	{
-		if (bComboWindowOpen && ComboIndex + 1 < ComboMontages.Num())
+		if (!bComboWindowOpen || ComboIndex + 1 >= ComboMontages.Num())
 		{
-			UAnimMontage* NextMontage = ComboMontages[++ComboIndex];
-			if (!NextMontage)
-			{
-				ComboIndex = -1;
-				return;
-			}
-			
-			const float PlayResult = AnimInst->Montage_Play(NextMontage);
-			if (PlayResult <= 0)
-			{
-				ComboIndex = -1;
-				return;
-			}
-
-			FOnMontageEnded EndedDelegate;
-			EndedDelegate.BindUObject(this, &ASword::OnAttackMontageEnded);
-			AnimInst->Montage_SetEndDelegate(EndedDelegate, NextMontage);
-
-			bComboWindowOpen = false;
-
-			UE_LOG(LogTemp, Log, TEXT("Sword: combo interrupted -> %d"), ComboIndex + 1);
+			return;
 		}
+
+		const FAttackMontagePair& NextPair = ComboMontages[++ComboIndex];
+		UAnimMontage* Played = PalAnim->PlayAttackMontage(
+			NextPair.FullBodyMontage,
+			NextPair.UpperBodyMontage,
+			NextPair.bForceFullBody);
+
+		if (!Played)
+		{
+			ComboIndex = -1;
+			return;
+		}
+
+		UE_LOG(LogTemp, Warning,
+			TEXT("Sword: Play start - Montage='%s' Duration=%.2f"),
+			*Played->GetName(), Played->GetPlayLength());
+
+		FOnMontageEnded EndedDelegate;
+		EndedDelegate.BindUObject(this, &ASword::OnAttackMontageEnded);
+		PalAnim->Montage_SetEndDelegate(EndedDelegate, Played);
+
+		bComboWindowOpen = false;
+		UE_LOG(LogTemp, Log, TEXT("Sword: combo continued -> %d"), ComboIndex + 1);
 		return;
 	}
 
-	UAnimMontage* FirstMontage = ComboMontages[0];
-	if (!FirstMontage)
+	const  FAttackMontagePair& FirstPair = ComboMontages[0];
+	UAnimMontage* Played = PalAnim->PlayAttackMontage(
+		FirstPair.FullBodyMontage,
+		FirstPair.UpperBodyMontage,
+		FirstPair.bForceFullBody);
+
+	if (!Played)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Sword: failed to start combo"));
 		return;
 	}
 
-	const float PlayResult = AnimInst->Montage_Play(FirstMontage);
-	if (PlayResult <= 0)
+
+	if (Played == FirstPair.UpperBodyMontage)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Sword: Montage_Play failed!"));
-		return;
+		PalAnim->SetUpperBodyBlendImmediate(1);
 	}
 
 	ComboIndex = 0;
-	
+
 	FOnMontageEnded EndedDelegate;
 	EndedDelegate.BindUObject(this, &ASword::OnAttackMontageEnded);
-	AnimInst->Montage_SetEndDelegate(EndedDelegate, FirstMontage);
+	PalAnim->Montage_SetEndDelegate(EndedDelegate, Played);
 
 	UE_LOG(LogTemp, Log, TEXT("Sword: combo started (1)"));
 }
@@ -152,6 +162,12 @@ void ASword::SetComboWindowOpen(bool bOpen)
 
 void ASword::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
+	const FString Reason = bInterrupted ? TEXT("INTERRUPTED") : TEXT("FINISHED");
+	UE_LOG(LogTemp, Warning,
+		TEXT("Sword: '%s' ended (%s) ComboIdx=%d"),
+		Montage ? *Montage->GetName() : TEXT("null"),
+		*Reason, ComboIndex);
+
 	if (bInterrupted)
 	{
 		UE_LOG(LogTemp, Log, TEXT("Sword: montage interrupted (combo continues)"));
