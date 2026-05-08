@@ -15,6 +15,8 @@ void UWeaponManager::BeginPlay()
 {
 	Super::BeginPlay();
 	SpawnWeapons();
+
+	ApplyWeaponAnimLayer(nullptr);
 }
 
 void UWeaponManager::SpawnWeapons()
@@ -61,6 +63,9 @@ void UWeaponManager::EqiupSlot(int32 SlotIndex)
 		}
 		CurrentWeapon = nullptr;
 		CurrentSlot = -1;
+
+		ApplyWeaponAnimLayer(nullptr);
+
 		UE_LOG(LogTemp, Log, TEXT("Weapon uneqiupped."));
 		return;
 	}
@@ -88,6 +93,9 @@ void UWeaponManager::EqiupSlot(int32 SlotIndex)
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->EqiupTo(Owner);
+
+		ApplyWeaponAnimLayer(CurrentWeapon);
+
 		UE_LOG(LogTemp, Log, TEXT("Equipped weapon at slot %d"), SlotIndex);
 	}
 }
@@ -98,4 +106,38 @@ void UWeaponManager::TryAttack()
 	{
 		CurrentWeapon->TryAttack();
 	}
+}
+
+void UWeaponManager::ApplyWeaponAnimLayer(AWeaponBase* Weapon)
+{
+	APal_ProjectCharacter* Owner = Cast<APal_ProjectCharacter>(GetOwner());
+	if (!Owner)
+	{
+		return;
+	}
+
+	USkeletalMeshComponent* Mesh = Owner->GetMesh();
+	if (!Mesh)
+	{
+		return;
+	}
+
+	UAnimInstance* AnimInst = Mesh->GetAnimInstance();
+	if (!AnimInst)
+	{
+		return;
+	}
+
+	TSubclassOf<UAnimInstance> LayerClass = (Weapon && Weapon->GetAnimLayerClass())
+		? Weapon->GetAnimLayerClass()
+		: DefaultAnimLayerClass;
+
+	if (!LayerClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[WeaponManager] No AnimLayerClass to link"));
+		return;
+	}
+
+	AnimInst->LinkAnimClassLayers(LayerClass);
+	UE_LOG(LogTemp, Log, TEXT("[WeaponManager] Linked AnimLayer: %s"), *LayerClass->GetName());
 }

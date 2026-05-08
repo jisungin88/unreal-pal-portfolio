@@ -1,4 +1,4 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+﻿// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "Sword.h"
@@ -96,12 +96,24 @@ void ASword::TryAttack()
 		return;
 	}
 
+	// === 콤보 진행 분기 — 게이팅 안 함 (이미 Attack 상태) ===
 	if (ComboIndex >= 0)
 	{
+		UE_LOG(LogTemp, Warning,
+			TEXT("[Sword::TryAttack] Combo branch: WindowOpen=%d ComboIdx=%d"),
+			bComboWindowOpen ? 1 : 0, ComboIndex);
+
 		if (!bComboWindowOpen || ComboIndex + 1 >= ComboMontages.Num())
 		{
+			UE_LOG(LogTemp, Warning,
+				TEXT("[Sword::TryAttack] Combo blocked: WindowOpen=%d, MaxReached=%d"),
+				bComboWindowOpen ? 1 : 0,
+				(ComboIndex + 1 >= ComboMontages.Num()) ? 1 : 0);
 			return;
 		}
+
+		UE_LOG(LogTemp, Warning,
+			TEXT("[Sword::TryAttack] Playing combo %d"), ComboIndex + 1);
 
 		const FAttackMontagePair& NextPair = ComboMontages[++ComboIndex];
 		UAnimMontage* Played = PalAnim->PlayAttackMontage(
@@ -112,12 +124,12 @@ void ASword::TryAttack()
 		if (!Played)
 		{
 			ComboIndex = -1;
+			CurrentWielder->SetActionState(EActionState::None);
 			return;
 		}
 
-		UE_LOG(LogTemp, Warning,
-			TEXT("Sword: Play start - Montage='%s' Duration=%.2f"),
-			*Played->GetName(), Played->GetPlayLength());
+		// 콤보 진행 중에도 SetActionState(Attack) 명시 (이미 Attack이지만 안전)
+		CurrentWielder->SetActionState(EActionState::Attack);
 
 		FOnMontageEnded EndedDelegate;
 		EndedDelegate.BindUObject(this, &ASword::OnAttackMontageEnded);
@@ -128,7 +140,18 @@ void ASword::TryAttack()
 		return;
 	}
 
-	const  FAttackMontagePair& FirstPair = ComboMontages[0];
+	// === 첫 공격 분기 — 게이팅 체크 ===
+	if (!CurrentWielder->CanStartAction(EActionState::Attack))
+	{
+		UE_LOG(LogTemp, Verbose, TEXT("Sword: blocked by ActionState"));
+		return;
+	}
+
+	UE_LOG(LogTemp, Warning,
+		TEXT("[Sword::TryAttack] First attack branch (State=%s)"),
+		*UEnum::GetValueAsString(CurrentWielder->GetActionState()));
+
+	const FAttackMontagePair& FirstPair = ComboMontages[0];
 	UAnimMontage* Played = PalAnim->PlayAttackMontage(
 		FirstPair.FullBodyMontage,
 		FirstPair.UpperBodyMontage,
@@ -140,13 +163,13 @@ void ASword::TryAttack()
 		return;
 	}
 
-
 	if (Played == FirstPair.UpperBodyMontage)
 	{
-		PalAnim->SetUpperBodyBlendImmediate(1);
+		PalAnim->SetUpperBodyBlendImmediate(1.f);
 	}
 
 	ComboIndex = 0;
+	CurrentWielder->SetActionState(EActionState::Attack);
 
 	FOnMontageEnded EndedDelegate;
 	EndedDelegate.BindUObject(this, &ASword::OnAttackMontageEnded);
@@ -162,22 +185,49 @@ void ASword::SetComboWindowOpen(bool bOpen)
 
 void ASword::OnAttackMontageEnded(UAnimMontage* Montage, bool bInterrupted)
 {
-	const FString Reason = bInterrupted ? TEXT("INTERRUPTED") : TEXT("FINISHED");
+	const FString MontageName = Montage ? Montage->GetName() : TEXT("null");
+	const EActionState CurState = CurrentWielder
+		? CurrentWielder->GetActionState()
+		: EActionState::None;
+
 	UE_LOG(LogTemp, Warning,
-		TEXT("Sword: '%s' ended (%s) ComboIdx=%d"),
-		Montage ? *Montage->GetName() : TEXT("null"),
-		*Reason, ComboIndex);
+		TEXT("[Sword::OnEnded] '%s' Interrupted=%d ComboIdx=%d State=%s"),
+		*MontageName,
+		bInterrupted ? 1 : 0,
+		ComboIndex,
+		*UEnum::GetValueAsString(CurState));
 
 	if (bInterrupted)
 	{
+		if (CurrentWielder &&
+			CurrentWielder->GetActionState() != EActionState::Attack)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("  → External interrupt, full reset"));
+
+			// 외부 인터럽트 — 콤보 완전 리셋
+			ComboIndex = -1;
+			bComboWindowOpen = false;
+			bNextComboQueued = false;
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("  → Combo transition, keeping state"));
+		}
+
 		UE_LOG(LogTemp, Log, TEXT("Sword: montage interrupted (combo continues)"));
 		return;
 	}
 
-	// �ڿ� ���� = �޺� ������ �� ���ų� Ŭ�� �� ��
+	// 자연 종료 = 콤보 끝까지 다 갔거나 클릭 안 함
 	ComboIndex = -1;
 	bComboWindowOpen = false;
 	bNextComboQueued = false;
+
+	if (CurrentWielder && CurrentWielder->GetActionState() == EActionState::Attack)
+	{
+		CurrentWielder->SetActionState(EActionState::None);
+	}
+
 	UE_LOG(LogTemp, Log, TEXT("Sword: combo ended/reset"));
 }
 

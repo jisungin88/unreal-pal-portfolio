@@ -77,7 +77,7 @@ APal_ProjectCharacter::APal_ProjectCharacter()
 	BuildingComponent = CreateDefaultSubobject<UBuildingComponent>(TEXT("BuildingComponent"));
 
 	DodgeComponent = CreateDefaultSubobject<UDodgeComponent>(TEXT("DodgeComponent"));
-
+	
 	WeaponManager = CreateDefaultSubobject<UWeaponManager>(TEXT("WeaponManager"));
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
@@ -97,6 +97,8 @@ void APal_ProjectCharacter::BeginPlay()
 			Subsystem->AddMappingContext(DefaultMappingContext, 0);
 		}
 	}
+
+	ApplyRotationProfile(CurrentRotationProfile);
 
 	CreateHUDWidget();
 
@@ -141,6 +143,10 @@ void APal_ProjectCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInp
 
 		EnhancedInputComponent->BindAction(EqiupSlot1Action, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnEqiupSlot1);
 		EnhancedInputComponent->BindAction(EqiupSlot2Action, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnEqiupSlot2);
+
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnDodgeInput);
+
+		EnhancedInputComponent->BindAction(ToggleAimDebugAction, ETriggerEvent::Started, this, &APal_ProjectCharacter::OnToggleAimDebugInput);
 	}
 	else
 	{
@@ -338,6 +344,15 @@ float APal_ProjectCharacter::TakeDamage(float DamageAmount, FDamageEvent const& 
 		return 0;
 	}
 
+	if (IsInvincible())
+	{
+		UE_LOG(LogTemp, Log,
+			TEXT("[TakeDamage] Blocked by invincibility (%s -> %s, %.1f)"),
+			DamageCauser ? *DamageCauser->GetName() : TEXT("?"),
+			*GetName(), DamageAmount);
+		return 0.f;
+	}
+
 	HealthComponent->ApplyDamage(ActualDamage);
 	UE_LOG(LogTemp, Log, TEXT("Player took %.1f damage from %s. HP: %.1f"),
 		ActualDamage,
@@ -505,5 +520,100 @@ bool APal_ProjectCharacter::CanStartAction(EActionState DesiredState) const
 
 	default:
 		return false;
+	}
+}
+
+void APal_ProjectCharacter::OnDodgeInput(const FInputActionValue& Value)
+{
+	if (DodgeComponent)
+	{
+		DodgeComponent->TryDodge();
+	}
+}
+
+void APal_ProjectCharacter::OnToggleAimDebugInput(const FInputActionValue& Value)
+{
+	const ERotationProfile Next = (CurrentRotationProfile == ERotationProfile::Aim)
+		? ERotationProfile::Combat
+		: ERotationProfile::Aim;
+
+	SetRotationProfile(Next);
+}
+
+void APal_ProjectCharacter::PushInvincible()
+{
+	++InvincibleStack;
+	UE_LOG(LogTemp, Verbose, TEXT("[Invincible] Push -> %d"), InvincibleStack);
+}
+
+void APal_ProjectCharacter::PopInvincible()
+{
+	if (InvincibleStack <= 0)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("[Invincible] Pop called but stack is 0 — mismatched calls"));
+		return;
+	}
+
+	--InvincibleStack;
+	UE_LOG(LogTemp, Verbose, TEXT("[Invincible] Pop -> %d"), InvincibleStack);
+}
+
+void APal_ProjectCharacter::SetRotationProfile(ERotationProfile NewProfile)
+{
+	if (CurrentRotationProfile == NewProfile)
+	{
+		return;
+	}
+
+	const ERotationProfile Old = CurrentRotationProfile;
+	CurrentRotationProfile = NewProfile;
+	ApplyRotationProfile(NewProfile);
+
+	UE_LOG(LogTemp, Log, TEXT("[Rotation] %s -> %s"), *UEnum::GetValueAsString(Old), *UEnum::GetValueAsString(NewProfile));
+
+	OnRotationProfileChanged.Broadcast(NewProfile);
+}
+
+void APal_ProjectCharacter::ApplyRotationProfile(ERotationProfile Profile)
+{
+	UCharacterMovementComponent* Move = GetCharacterMovement();
+	if (!Move)
+	{
+		return;
+	}
+
+	switch (Profile)
+	{
+	case ERotationProfile::Combat:
+		// 이동 방향으로 캐릭터 회전
+		bUseControllerRotationYaw = false;
+		bUseControllerRotationPitch = false;
+		bUseControllerRotationRoll = false;
+		Move->bOrientRotationToMovement = true;
+		Move->bUseControllerDesiredRotation = false;
+		break;
+
+	case ERotationProfile::Aim:
+		// 카메라(컨트롤러) 방향으로 캐릭터 회전
+		bUseControllerRotationYaw = true;
+		bUseControllerRotationPitch = false;
+		bUseControllerRotationRoll = false;
+		Move->bOrientRotationToMovement = false;
+		Move->bUseControllerDesiredRotation = false;
+		break;
+
+	case ERotationProfile::Locked:
+		// 모든 자동 회전 차단 (코드로만 회전 가능)
+		bUseControllerRotationYaw = false;
+		bUseControllerRotationPitch = false;
+		bUseControllerRotationRoll = false;
+		Move->bOrientRotationToMovement = false;
+		Move->bUseControllerDesiredRotation = false;
+		break;
+
+	default:
+		UE_LOG(LogTemp, Warning,
+			TEXT("[Rotation] Unknown profile: %d"), (int32)Profile);
+		break;
 	}
 }

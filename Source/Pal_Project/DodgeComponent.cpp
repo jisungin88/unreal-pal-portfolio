@@ -164,6 +164,12 @@ void UDodgeComponent::OnDodgeMontageEnded(UAnimMontage* Montage, bool bInterrupt
 
 	if (APal_ProjectCharacter* Character = CachedCharacter.Get())
 	{
+		// 회전 모드 복원 (있다면)
+		/*if (UCharacterMovementComponent* Move = Character->GetCharacterMovement())
+		{
+			Move->bOrientRotationToMovement = true;
+		}*/
+
 		Character->SetActionState(EActionState::None);
 	}
 

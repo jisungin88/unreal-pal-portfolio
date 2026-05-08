@@ -19,6 +19,7 @@ class UStaminaComponent;
 class UHealthComponent;
 class UPalInventoryComponent;
 class UBuildingComponent;
+class UDodgeComponent;
 class UWeaponManager;
 class UPalHUDWidget;
 struct FInputActionValue;
@@ -39,6 +40,22 @@ class APal_ProjectCharacter : public ACharacter
 	//Category = "..."		- 에디터 디테일 창에서 어느 섹션에 묶어 보일지
 	//meta = (AllowPrivateAccess = "true") - private인데도 블루프린트에서 접근 허용
 	/** Camera boom positioning the camera behind the character */
+
+
+protected:
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	TObjectPtr<UDodgeComponent> DodgeComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|State", meta = (AllowPrivateAccess = "true"))
+	EActionState ActionState = EActionState::None;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|Combat", meta = (AllowPrivateAccess = "true"))
+	int32 InvincibleStack = 0;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|Rotation", meta = (AllowPrivateAccess = "true"))
+	ERotationProfile CurrentRotationProfile = ERotationProfile::Combat;
+
+private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	USpringArmComponent* CameraBoom;
 
@@ -52,57 +69,60 @@ class APal_ProjectCharacter : public ACharacter
 
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* JumpAction;
+	TObjectPtr<class UInputAction> JumpAction;
 
 	/** Move Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* MoveAction;
+	TObjectPtr<class UInputAction> MoveAction;
 
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* LookAction;
+	TObjectPtr<class UInputAction> LookAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* SprintAction;
+	TObjectPtr<class UInputAction> SprintAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* AttackAction;
+	TObjectPtr<class UInputAction> AttackAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* ThrowAction;
+	TObjectPtr<class UInputAction> ThrowAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* SummonAction;
+	TObjectPtr<class UInputAction> SummonAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* BuildModeAction;
+	TObjectPtr<class UInputAction> BuildModeAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* PlaceAction;
+	TObjectPtr<class UInputAction> PlaceAction;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* EqiupSlot1Action;
+	TObjectPtr<class UInputAction> EqiupSlot1Action;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
-	UInputAction* EqiupSlot2Action;
+	TObjectPtr<class UInputAction> EqiupSlot2Action;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> DodgeAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<class UInputAction> ToggleAimDebugAction;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	UStaminaComponent* StaminaComponent;
+	TObjectPtr<UStaminaComponent> StaminaComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	UHealthComponent* HealthComponent;
+	TObjectPtr<UHealthComponent> HealthComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	UPalInventoryComponent* InventoryComponent;
+	TObjectPtr<UPalInventoryComponent> InventoryComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	UBuildingComponent* BuildingComponent;
+	TObjectPtr<UBuildingComponent> BuildingComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	UDodgeComponent* DodgeComponent;
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Stats", meta = (AllowPrivateAccess = "true"))
-	UWeaponManager* WeaponManager;
+	TObjectPtr<UWeaponManager> WeaponManager;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement", meta = (AllowPrivateAccess = "true", ClampMin = "0.0"))
 	float WalkSpeed = 500;
@@ -143,9 +163,6 @@ class APal_ProjectCharacter : public ACharacter
 	UPROPERTY(Transient)
 	UPalHUDWidget* HUDWidget; //인스턴스(실제 위젯 객체)를 가리킴
 
-protected:
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Pal|State", meta = (AllowPrivateAccess = "true"))
-	EActionState ActionState = EActionState::None;
 
 public:
 	APal_ProjectCharacter();
@@ -156,13 +173,64 @@ public:
 		class AController* EventInstigator,
 		AActor* DamageCauser) override;
 
+
+	UFUNCTION(BlueprintPure, Category = "Movement")
+	bool IsSprinting() const { return bIsSprinting; }
+
+	UFUNCTION(BlueprintPure, Category = "Pal")
+	UPalInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Pal")
+	UDodgeComponent* GetDodgeComponent() const { return DodgeComponent; }
+
+	UFUNCTION(BlueprintPure, Category = "Pal|State")
+	EActionState GetActionState() const { return ActionState; }
+
+	UFUNCTION(BlueprintCallable, Category = "Pal|State")
+	void SetActionState(EActionState NewState);
+
+	UFUNCTION(BlueprintPure, Category = "Pal|State")
+	bool CanStartAction(EActionState DesiredState) const;
+
+	UFUNCTION(BlueprintPure, Category = "Pal|Combat")
+	bool IsInvincible() const { return InvincibleStack > 0; }
+
+	UFUNCTION(BlueprintCallable, Category = "Pal|Combat")
+	void PushInvincible();
+
+	UFUNCTION(BlueprintCallable, Category = "Pal|Combat")
+	void PopInvincible();
+
+	UFUNCTION(BlueprintCallable, Category = "Pal|Rotation")
+	void SetRotationProfile(ERotationProfile NewProfile);
+
+	UFUNCTION(BlueprintCallable, Category = "Pal|Rotation")
+	ERotationProfile GetRotationProfile() const { return CurrentRotationProfile; }
+
+	UFUNCTION(BlueprintPure, Category = "Combat")
+	UWeaponManager* GetWeaponManager() const { return WeaponManager; }
+
+	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnActionStateChanged, EActionState /*Old*/, EActionState /*New*/);
+	FOnActionStateChanged OnActionStateChanged;
+
+	DECLARE_MULTICAST_DELEGATE_OneParam(FOnRotationProfileChanged, ERotationProfile /*New*/);
+	FOnRotationProfileChanged OnRotationProfileChanged;
+
 protected:
+	// APawn interface
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
+	// To add mapping context
+	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaSeconds) override;
+
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
 
 	/** Called for looking input */
 	void Look(const FInputActionValue& Value);
-			
+
 	void StartSprint(const FInputActionValue& Value);
 
 	void StopSprint(const FInputActionValue& Value);
@@ -183,41 +251,17 @@ protected:
 
 	void OnEqiupSlot2(const FInputActionValue& Value);
 
+	void OnDodgeInput(const FInputActionValue& Value);
+
+	void OnToggleAimDebugInput(const FInputActionValue& Value);
+
 	void CreateHUDWidget();
-	
+
 	UFUNCTION()
 	void HandleDeath();
 
-public:
-	UFUNCTION(BlueprintPure, Category = "Pal|State")
-	EActionState GetActionState() const { return ActionState; }
-
-	UFUNCTION(BlueprintCallable, Category = "Pal|State")
-	void SetActionState(EActionState NewState);
-
-	UFUNCTION(BlueprintPure, Category = "Pal|State")
-	bool CanStartAction(EActionState DesiredState) const;
-
-	UFUNCTION(BlueprintPure, Category = "Pal")
-	UPalInventoryComponent* GetInventoryComponent() const { return InventoryComponent; }
-
-	UFUNCTION(BlueprintPure, Category = "Movement")
-	bool IsSprinting() const { return bIsSprinting; }
-
-	UFUNCTION(BlueprintPure, Category = "Combat")
-	UWeaponManager* GetWeaponManager() const { return WeaponManager; }
-
-	DECLARE_MULTICAST_DELEGATE_TwoParams(FOnActionStateChanged, EActionState /*Old*/, EActionState /*New*/);
-	FOnActionStateChanged OnActionStateChanged;
-
-protected:
-	// APawn interface
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
-	// To add mapping context
-	virtual void BeginPlay() override;
-
-	virtual void Tick(float DeltaSeconds) override;
+private:
+	void ApplyRotationProfile(ERotationProfile Profile);
 
 public:
 	//FORCEINLINE = "함수 호출 비용 없이 호출한 자리에 코드를 직접 박아넣어라" (성능 최적화)

@@ -22,6 +22,16 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
+public:
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void EqiupSlot(int32 SlotIndex);
+
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
+
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
+	void TryAttack();
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon")
 	TArray<TSubclassOf<AWeaponBase>> WeaponLoadout;
@@ -35,16 +45,11 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Weapon")
 	TObjectPtr<AWeaponBase> CurrentWeapon = nullptr;
 
-public:
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void EqiupSlot(int32 SlotIndex);
-
-	UFUNCTION(BlueprintPure, Category = "Weapon")
-	AWeaponBase* GetCurrentWeapon() const { return CurrentWeapon; }
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	void TryAttack();
-
 private:
 	void SpawnWeapons();
+
+	void ApplyWeaponAnimLayer(AWeaponBase* Weapon);
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Animation", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UAnimInstance> DefaultAnimLayerClass;
 };

@@ -25,3 +25,11 @@ enum class EDodgeDirection : uint8
 	Left,
 	ForwardLeft,
 };
+
+UENUM(BlueprintType)
+enum class ERotationProfile : uint8
+{
+	Combat,
+	Aim,
+	Locked, //UMETA(DisplayName = "Locked")
+};

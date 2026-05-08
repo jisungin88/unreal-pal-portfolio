@@ -56,6 +56,9 @@ private:
     UPROPERTY(Transient, BlueprintReadOnly, Category = "Anim|State", meta = (AllowPrivateAccess = "true"))
     bool bIsSprinting = false;
 
+    UPROPERTY(Transient, BlueprintReadOnly, Category = "Anim|State", meta = (AllowPrivateAccess = "true"))
+    ERotationProfile RotationProfile = ERotationProfile::Combat;
+
     //========================================================
     // Layering (상하체 블렌드)
     //========================================================

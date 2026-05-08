@@ -76,6 +76,8 @@ void UPalAnimInstance::NativeUpdateAnimation(float DeltaSeconds)
         Direction = 0.f;
     }
 
+    RotationProfile = OwningCharacter->GetRotationProfile();
+
     // 캐릭터 회전 (Lean 계산)
     const float CurrentYaw = OwningCharacter->GetActorRotation().Yaw;
     const float YawDelta = FMath::FindDeltaAngleDegrees(PreviousYaw, CurrentYaw);

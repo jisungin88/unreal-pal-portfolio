@@ -9,6 +9,7 @@
 class USkeletalMeshComponent;
 class APal_ProjectCharacter;
 class UAnimMontage;
+class UAnimInstance;
 
 USTRUCT(BlueprintType)
 struct FAttackMontagePair
@@ -68,6 +69,9 @@ protected:
 	FName AttachSocketName = TEXT("hand_r_socket");
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Animation")
+	TSubclassOf<UAnimInstance> AnimLayerClass;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Animation")
 	TObjectPtr<UAnimMontage> AttackMontage;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Weapon|Combat", meta = (ClampMin = "0"))
@@ -88,6 +92,9 @@ protected:
 	float BaseDamage = 25;
 
 public:
+	UFUNCTION(BlueprintPure, Category = "Weapon")
+	TSubclassOf<UAnimInstance> GetAnimLayerClass() const { return AnimLayerClass; }
+
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	virtual void EqiupTo(APal_ProjectCharacter* Wielder);
 
