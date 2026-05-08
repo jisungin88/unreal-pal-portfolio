@@ -1,0 +1,33 @@
+헤더 구조. 
+
+UCLASS()
+class XXX_API AMyActor : public AActor
+{
+	GENERATED_BODY()
+
+// 생성자
+public:
+	AMyActor();
+
+// 엔진 오버라이드
+protected:
+	virtual void BeginPlay() override;
+
+protected:
+	// Components
+
+protected:
+	// Config
+
+protected:
+	// Runtime State
+
+public:
+	// Public Functions
+
+protected:
+	// Internal Functions
+
+private:
+	// Private Helpers
+};
